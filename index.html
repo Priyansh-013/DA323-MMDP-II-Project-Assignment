@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Understanding the Challenges of Training Multi-modal Neural Networks</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 40px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    h1, h2, h3, h4 {
+      color: #2c3e50;
+    }
+    .center {
+      text-align: center;
+    }
+    .flex {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .caption {
+      text-align: center;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+
+<hr>
+
+
+
+<h1>Understanding the Challenges of Training Multi-modal Neural Networks</h1>
+
+
+<hr>
+
+
+
+<img src="images/01.png" alt="Cover Image">
+
+<p>In the evolving landscape of artificial intelligence, multi-modal learning represents a significant frontier, combining various data types such as images, audio, and motion to achieve more comprehensive understanding. However, researchers have encountered a puzzling phenomenon: <em>despite having access to more information, multi-modal networks often perform worse than their uni-modal counterparts</em>. This blog explores <em>why</em> this happens and examines a novel solution called <strong>Gradient-Blending</strong> that effectively addresses these challenges.</p>
+
+<hr>
+
+<h2>1. The Paradox of Multi-modal Performance</h2>
+
+<p>When training deep learning models on tasks with multiple input modalities, one would logically expect that a multi-modal network would outperform a single-modality network. However, empirical evidence reveals the opposite trend across various datasets and modality combinations.</p>
+
+<img src="images/1.png" alt="Performance Drop Graph">
+
+<p>As shown above, on the <strong>Kinetics video classification dataset</strong>, a visual-only (RGB) model achieves <em>72.6% top-1 accuracy</em>, while a model combining RGB and audio modalities achieves only <em>71.4%</em> – <strong>a drop of 1.2%</strong>. This counter-intuitive trend persists across combinations like RGB + Optical Flow (71.3%), Audio + Optical Flow (58.3%), and even all three modalities (70.0%).</p>
+
+<p>Multi-modal solutions are mathematically a <em>superset</em> of uni-modal ones. Hence, the issue likely lies in optimization rather than architecture.</p>
+
+<hr>
+
+<h2>2. Some Fusion Techniques</h2>
+
+<h3>Squeeze-and-Excitation (SE) Network</h3>
+
+<p>The SE block recalibrates channel-wise feature responses by modeling interdependencies between channels.</p>
+
+
+
+
+
+
+<div>
+  <img src="images/2.png" alt="SE 1">
+</div>
+
+<div>
+    <img src="images/3.png" alt="SE 1">
+  </div>
+
+
+  <div>
+    <img src="images/4.png" alt="SE 1">
+  </div>
+
+
+
+<p>This process allows the network to selectively emphasize informative features while suppressing less useful ones, theoretically making it well-suited for multi-modal fusion where different channels might correspond to different modalities.</p>
+
+<h3>Non-Local (NL) Neural Networks</h3>
+
+<p>NL networks capture long-range dependencies through a global weighted sum of features, offering global context awareness across modalities.</p>
+
+<div">
+    <img src="images/5.png" alt="SE 1">
+  </div>
+
+  <div>
+    <img src="images/6.png" alt="SE 1">
+  </div>
+
+  <div>
+    <img src="images/7.png" alt="SE 1">
+  </div>
+
+
+  <p>This global context awareness should be beneficial for multi-modal learning, where relationships between modalities might span across the entire feature space rather than just local neighborhoods.</p>
+
+
+ <hr>
+
+<img src="images/TopAccuracyonKinetics.png" alt="Top Accuracy">
+
+<p>Despite promising architecture, SE and NL gates underperform against RGB-only models, indicating deeper issues in training dynamics.</p>
+
+<hr>
+
+<h2>3. Core Challenges in Multi-modal Learning</h2>
+
+<ul>
+  <li><strong><u>The Overfitting Problem:</u></strong> More parameters lead to higher overfitting risks in multi-modal networks. 
+     For instance, a late-fusion audio-visual network has nearly <strong>twice the parameters of a visual-only network</strong>. This increased 
+     capacity makes multi-modal networks more prone to overfitting - they memorize training data patterns that don't generalize 
+     well to new examples.</li>
+  <li><strong><u>Combining Modalities:</u></strong> Different modalities overfit at different rates, complicating joint training.
+    For example, audio models typically <strong>overfit much faster than visual models</strong> due to differences in data distribution, 
+    model capacity, and the inherent complexity of the signal.</li>
+</ul>
+
+<hr>
+
+<h2>4. Some concepts to know</h2>
+
+<h3>Key Concepts in Multi-modal Neural Networks</h3>
+<ul>
+  <li><strong>Motion Vectors:</strong> Represent temporal motion in video via vector offsets.
+    They represent temporal information that complements spatial data from individual frames.</li>
+  <li><strong>Cross-modal Self-supervised Learning:</strong> Uses modality correspondence as supervision.
+    For example, a system might learn to predict whether an audio clip corresponds to a video clip, using 
+    the inherent relationship between these modalities as a supervisory signal</li>
+  <li><strong>Auxiliary Losses:</strong> Add secondary objectives to help stabilize training.
+    This technique can stabilize training, reduce vanishing gradient problems for earlier layers, and serve as a form of regularization.</li>
+</ul>
+
+<h3>Methodologies Currently Used</h3>
+
+<h4>Uni-modal Training</h4>
+<img src="images/8.png" alt="Uni-modal Training">
+<p>Description: Each modality is trained independently. <br>Limitation: No interaction between modalities.</p>
+
+<h4>Naive Multi-modal Joint Training</h4>
+<img src="images/9.png" alt="Naive Training">
+<p>Description: Simple concatenation.<br> Limitation: Assumes perfect alignment.</p>
+
+<h4>Multi-modal Joint Training</h4>
+<img src="images/10.png" alt="Fusion Techniques">
+<p>Description: Uses fusion techniques like SE/NL gates.<br> Limitation: High complexity and embedding mismatch.</p>
+
+<hr>
+
+<h2>4. Solutions Proposed</h2>
+
+<h3>Defining OGR and L*</h3>
+<p><strong>OGR (Overfitting-to-Generalization Ratio)</strong> helps track the learning quality.</p>
+
+<img src="images/11.png" alt="OGR Formula">
+
+where
+<ul>
+    <li><strong>ΔO</strong>  represents the change in overfitting (the gap between training and validation performance)</li>
+    <li><strong> ΔG </strong>represents the change in generalization (improvement in validation performance)</li>
+  </ul>
+
+
+  <p>A lower OGR indicates better learning, as it means the model is improving on validation data with minimal increase in
+     overfitting. L* represents the <em>true</em> loss with respect to the target distribution, which is approximated using
+      <em> validation loss</em> in practice. This metric provides a principled way to evaluate whether learning is proceeding 
+      efficiently, focusing not just on absolute performance but on the quality of the learning process itself.</p>
+
+
+<h3>Blending through OGR: A Convex Formulation</h3>
+
+<p>Gradient-Blending computes optimal weights to combine gradients from each modality by minimizing OGR.</p>
+
+
+
+<div>
+    <img src="images/23.png" alt="SE 1">
+  </div>
+  <div>
+    <img src="images/12.png" alt="SE 1">
+  </div>
+
+
+  <p>This optimisation problem gives a closed form solution given by</p>
+  <div>
+    <img src="images/13.png" alt="SE 1">
+  </div>
+  <div>
+    <img src="images/24.png" alt="SE 1">
+  </div>
+
+
+  <h4>Algorithm: </h4>
+  <div>
+    <img src="images/14.png" alt="SE 1">
+  </div>
+
+
+<p><em>Modalities that generalize well and overfit less get higher weights.</em></p>
+
+<h4>Blend Loss</h4>
+<p>Blend loss is calculated as:</p>
+
+<div>
+    <img src="images/25.png" alt="SE 1">
+  </div>
+
+<h3>Implementation Approaches: Offline vs Online</h3>
+
+<h4>Offline Gradient-Blending</h4>
+<p>Offline Gradient-Blending computes weights only <strong>once</strong> 
+    at the beginning of training and uses this fixed set of weights throughout the entire training process.</p>
+    <div>
+        <img src="images/15.png" alt="SE 1">
+      </div>
+
+<h4>Online Gradient-Blending</h4>
+<p>Online Gradient-Blending represents the complete version, <stong>recomputing weights regularly </strong>(e.g., every few epochs) 
+    and adjusting the training process dynamically. This approach provides additional performance gains
+     but is more complex to implement.</p>
+     <div>
+        <img src="images/16.png" alt="SE 1">
+      </div>
+
+<hr>
+
+<h2>5. Results</h2>
+
+<div class="flex">
+  <div class="center">
+    <img src="images/17.png" alt="Accuracy Graph" width="700">
+    <p><strong>Offline and online Gradient-Blending outperform all baselines.</strong></p>
+  </div>
+</div>
+
+<div class="flex">
+  <img src="images/18.png" alt="Super-Epochs" width="400">
+  <img src="images/19.png" alt="Optimizers" width="400">
+</div>
+<p class="caption">
+  <strong>(a)</strong> Online G-Blend outperforms on each super-epoch.
+  <strong>(b)</strong> Performance across optimizers.
+</p>
+
+<div class="flex">
+  <div class="center">
+    <img src="images/20.png" alt="Other Datasets" width="700">
+    <p><strong>Gradient-Blending generalizes across datasets.</strong></p>
+  </div>
+</div>
+
+<h3>Comparison with State-of-the-Art</h3>
+
+<h4>#1 Kinetics</h4>
+<div class="flex">
+  <div class="center">
+    <img src="images/sota_kinetics.png" alt="Kinetics Comparison">
+    <p>Performance on <strong>Kinetics</strong>.</p>
+  </div>
+</div>
+
+<h4>#2 AudioSet</h4>
+<div class="flex">
+  <div class="center">
+    <img src="images/sota_audioSet.png" alt="AudioSet Comparison">
+    <p>Performance on <strong>AudioSet</strong>.</p>
+  </div>
+</div>
+
+<h4>#3 EPIC-Kitchen</h4>
+<div class="flex">
+  <div class="center">
+    <img src="images/sota_epic.png" alt="EPIC-Kitchen Comparison">
+    <p>Performance on <strong>EPIC-Kitchen</strong>.</p>
+  </div>
+</div>
+
+<hr>
+
+<h2>Conclusion</h2>
+
+<p>This blog explored the counter-intuitive result that multi-modal networks may underperform uni-modal ones. Two core issues were identified: increased overfitting and training misalignment between modalities. <strong>Gradient-Blending</strong> provides an effective solution by dynamically weighting modalities based on their learning behavior, offering robust improvements across datasets and architectures.</p>
+
+<hr>
+
+<h4>Credits:</h4>
+<pre><code>
+@article{wu2024visual,
+  title={What Makes Training Multi-Modal Classification Networks Hard?},
+  author={Weiyao Wang, Du Tran, Matt Feiszli},
+  journal={arXiv cs arXiv:1905.12681},
+  year={2020}
+}
+</code></pre>
+
+<hr>
+
+<div class="center">
+  <img src="images/22.png" alt="Closing Image">
+</div>
+
+</body>
+</html>
